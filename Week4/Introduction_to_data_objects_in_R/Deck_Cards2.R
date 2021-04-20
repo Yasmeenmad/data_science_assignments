@@ -75,7 +75,7 @@ deal_for_num_players(11,5)
 
 
 # -------------------- task4-----------------------
-# save the cards each player will receive in a data frame
+# save the cards each player will receive
 
 player1 <- deal_for_num_players(3,5)[1]
 player1
