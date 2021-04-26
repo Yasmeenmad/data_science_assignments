@@ -373,13 +373,11 @@ method: This is the method used to compute the smoothing line. If NULL, a defaul
 
 formula: When providing a custom method argument, the formula to use. The default is y ~ x. For example, to use the line implied by lm(y ~ x + I(x ^ 2) + I(x ^ 3)), use method = "lm" or method = lm and formula = y ~ x + I(x ^ 2) + I(x ^ 3).
 
-method.arg(): Arguments other than than the formula, which is already specified in the formula argument, to pass to the function inmethod`.
+method.arg(): Arguments other than than the formula, which is already specified in the formula argument, to pass to the function inmethod.
 
 se: If TRUE, display standard error bands, if FALSE only display the line.
 
-na.rm: If FALSE, missing values are removed with a warning, if TRUE the are silently removed. The default is FALSE in order to make debugging easier. If missing values are known to be in the data, then can be ignored, but if missing values are not anticipated this warning can help catch errors.
-
-and there are more arguments like: orientation, show.legend, inherit.aes	,geom, stat, n, span, fullrange,level.
+na.rm: If FALSE, missing values are removed with a warning, if TRUE the are silently removed. The default is FALSE in order to make debugging easier. If missing values are known to be in the data, then can be ignored, but if missing values are not anticipated this warning can help catch errors.and there are more arguments like: orientation, show.legend, inherit.aes ,geom, stat, n, span, fullrange,level.
 
 
 5- In our proportion bar chart, we need to set group = 1. Why? In other words what is the problem with these two graphs?
