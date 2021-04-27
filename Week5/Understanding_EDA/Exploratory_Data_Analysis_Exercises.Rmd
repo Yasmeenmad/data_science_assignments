@@ -1,0 +1,379 @@
+---
+title: "data_visualisation_exercises"
+author: "Yasmeen Aldossary"
+date: "4/26/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+```{r}
+library(tidyverse)
+library(nycflights13)
+library(lvplot)
+library(ggbeeswarm)
+mpg
+```
+
+
+## 7.3.4 Exercises
+
+1- Explore the distribution of each of the x, y, and z variables in diamonds. What do you learn? Think about a diamond and how you might decide which dimension is the length, width, and depth.
+
+```{r}
+diamonds %>% 
+  ggplot(aes(x = x)) +
+  geom_histogram() +
+  ggtitle("Histogram of x") +
+    coord_cartesian(xlim = c(0, 10))
+```
+```{r}
+diamonds %>% 
+  ggplot(aes(x = y)) +
+  geom_histogram(bins = 100) +
+  ggtitle("Histogram of y") +
+  coord_cartesian(xlim = c(0, 10))
+```
+```{r}
+diamonds %>% 
+  ggplot(aes(x = z)) +
+  geom_histogram(bins = 100) +
+  ggtitle("Histogram of z") +
+    coord_cartesian(xlim = c(0, 10))
+```
+
+There are large outliers in y and z indicating possible data entry errors.and most diamonds are symmetrical when viewed from the top so I would expect length and width to have similar ranges while the depth would be different.based on that assumption x and y both vary mostly between 3-8, while z varies between 2.5-5.0 so I would assume z is depth and x & y are length and width
+
+
+2- Explore the distribution of price. Do you discover anything unusual or surprising? (Hint: Carefully think about the binwidth and make sure you try a wide range of values.)
+
+```{r}
+diamonds %>% 
+  ggplot(aes(x = price)) +
+  geom_histogram(bins = 15) +
+  ggtitle("Histogram of Price - 15 bins")
+```
+```{r}
+diamonds %>% 
+  ggplot(aes(x = price)) +
+  geom_histogram(bins = 30) +
+  ggtitle("Histogram of Price - 30 bins")
+```
+```{r}
+diamonds %>% 
+  ggplot(aes(x = price)) +
+  geom_histogram(bins = 80) +
+  ggtitle("Histogram of Price - 80 bins")
+```
+```{r}
+diamonds %>% 
+  ggplot(aes(x = price)) +
+  geom_histogram(bins = 200) +
+  ggtitle("Histogram of Price - 200 bins") +
+  scale_x_continuous(breaks = seq(0, 20000, by = 500)) +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
+The distribution is strongly right skewed, which is unsurprising since there will be fewer diamonds in the higher price ranges. 
+When looking at the distribution with a large number of bins it is clear there are much fewer diamonds priced at $1500 than is expected
+
+3- How many diamonds are 0.99 carat? How many are 1 carat? What do you think is the cause of the difference?
+
+```{r}
+diamonds %>% 
+  filter(carat == 0.99) %>% 
+  count()
+```
+
+```{r}
+diamonds %>% 
+  filter(carat == 1) %>% 
+  count()
+```
+
+Only 23 diamonds are listed at .99 carats while there are 1558 diamonds at 1 carat
+
+Most likely diamond producers are rounded up the vast majority of diamonds that land at .99 carats since that is a much more appealing number to the consumer
+
+
+4- Compare and contrast coord_cartesian() vs xlim() or ylim() when zooming in on a histogram. What happens if you leave binwidth unset? What happens if you try and zoom so only half a bar shows?
+
+```{r}
+diamonds %>% 
+  ggplot(aes(x = price)) +
+  geom_histogram() +
+  coord_cartesian(xlim = c(4900, 10000))
+```
+```{r}
+diamonds %>% 
+  ggplot(aes(x = price)) +
+  geom_histogram() +
+  xlim(c(4900, 9500)) +
+  ylim(c(0, 500))
+```
+`xlim()` and `ylim()` remove the values that don’t fall within the specified range while `coord_cartesian()` just clips off the parts of the graph that fall outside of the range
+
+## 7.4.1 Exercises
+
+1- What happens to missing values in a histogram? What happens to missing values in a bar chart? Why is there a difference?
+  
+Missing values can be omitted in a histogram, in a bar chart they will be added up and represent the total number of “NA” string values, just like any other categorical value. The reason is because histograms represent continous variables that we know must be numeric, so we can automatically omit any varchar or text string value. However, as mentioned earlier, bar charts are created for categorical values…meaning they are designed to aggregate each instance of any string value, including “NA” unless specifically removed.
+  
+2- What does na.rm = TRUE do in mean() and sum()?
+
+This option removes `NA` values from the vector prior to calculating the mean and sum.
+
+```{r}
+mean(c(4, 5, 7, 2, NA), na.rm = TRUE)
+sum(c(4, 5, 7, 2, NA), na.rm = TRUE)
+```
+  
+
+## 7.5.1.1 Exercises
+
+1- Use what you’ve learned to improve the visualisation of the departure times of cancelled vs. non-cancelled flights.
+
+```{r}
+nycflights13::flights %>%
+  mutate(
+    cancelled = is.na(dep_time),
+    sched_hour = sched_dep_time %/% 100,
+    sched_min = sched_dep_time %% 100,
+    sched_dep_time = sched_hour + sched_min / 60
+  ) %>%
+  ggplot() +
+  geom_boxplot(mapping = aes(y = sched_dep_time, x = cancelled))
+```
+
+2- What variable in the diamonds dataset is most important for predicting the price of a diamond? How is that variable correlated with cut? Why does the combination of those two relationships lead to lower quality diamonds being more expensive?
+```{r}
+diamond_fit <- lm(price ~ ., data = diamonds)
+summary(diamond_fit)
+```
+```{r}
+ggplot(diamonds, aes(x = cut, y = carat)) +
+  geom_boxplot()
+```
+Fair diamonds on average have a higher carat than other cuts. This result explains why Fair diamonds have a higher average price than the other cuts, since carat weight is the most correlated variable with price.
+
+3- Install the ggstance package, and create a horizontal boxplot. How does this compare to using coord_flip()?
+
+```{r}
+library(ggstance)
+```
+
+```{r}
+ggplot(data = mpg) +
+  geom_boxplot(mapping = aes(x = reorder(class, hwy, FUN = median), y = hwy))
+
+ggplot(data = mpg) +
+  geom_boxplot(mapping = aes(x = reorder(class, hwy, FUN = median), y = hwy)) +
+  coord_flip()
+```
+The plot is almost identical to using coord_flip() except the legend is also flipped for readability. Additionally the variables are supplied in the opposite order between the 2 methods.
+
+4- One problem with boxplots is that they were developed in an era of much smaller datasets and tend to display a prohibitively large number of “outlying values”. One approach to remedy this problem is the letter value plot. Install the lvplot package, and try using geom_lv() to display the distribution of price vs cut. What do you learn? How do you interpret the plots?
+
+```{r}
+ggplot(diamonds, aes(x = cut, y = price)) +
+  geom_lv()
+```
+
+Like box-plots, the boxes of the letter-value plot correspond to quantiles. However, they incorporate far more quantiles than box-plots. They are useful for larger datasets because, the larger datasets can give precise estimates of quantiles beyond the quartiles, and in expectation, larger datasets should have more outliers (in absolute numbers).
+
+
+5- Compare and contrast geom_violin() with a facetted geom_histogram(), or a coloured geom_freqpoly(). What are the pros and cons of each method?
+  
+```{r}
+ggplot(data = diamonds, mapping = aes(x = cut, y = price)) +
+  geom_violin() +
+  coord_flip()
+```
+
+```{r}
+diamonds %>% 
+  ggplot(aes(x = price, y = ..density.., color = cut)) +
+  geom_freqpoly()
+
+diamonds %>% 
+  ggplot(aes(x = price, color = cut)) +
+  geom_density()
+
+```
+
+  
+```{r}
+diamonds %>% 
+  ggplot(aes(x= price)) +
+  geom_histogram() +
+  facet_wrap(~cut, ncol = 3, scales = "free") +
+  guides(fill=FALSE)
+```
+The `geom_freqpoly()` is better for look-up,it is easy to tell which cut has the highest density. However, the overlapping lines makes it difficult to distinguish how the overall distributions relate to each other. 
+The `geom_violin()` and faceted `geom_histogram()` have similar strengths and weaknesses. It is easy to visually distinguish differences in the overall shape of the distributions (skewness, central values, variance, etc). However, since we can’t easily compare the vertical values of the distribution, it is difficult to look up which category has the highest density for a given price. All of these methods depend on tuning parameters to determine the level of smoothness of the distribution.
+
+
+6- If you have a small dataset, it’s sometimes useful to use geom_jitter() to see the relationship between a continuous and categorical variable. The ggbeeswarm package provides a number of methods similar to geom_jitter(). List them and briefly describe what each one does.
+
+geom_quasirandom() method produces plots that are a mix of jitter and violin plots. There are several different methods that determine exactly how the random location of the points is generated.
+
+geom_beeswarm() method produces a plot similar to a violin plot, but by offsetting the points.
+
+```{r}
+ggplot(data = mpg) +
+  geom_quasirandom(mapping = aes(x = reorder(class, hwy, FUN = median),
+    y = hwy))
+
+
+ggplot(data = mpg) +
+  geom_beeswarm(mapping = aes(
+    x = reorder(class, hwy, FUN = median),
+    y = hwy))
+
+```
+
+## 7.5.2.1 Exercises
+
+1- How could you rescale the count dataset above to more clearly show the distribution of cut within colour, or colour within cut?
+```{r}
+# cut within color
+diamonds %>%
+  count(color, cut) %>%
+  group_by(color) %>%
+  mutate(prop = n / sum(n)) %>%
+  ggplot(mapping = aes(x = color, y = cut)) +
+  geom_tile(mapping = aes(fill = prop))
+
+# color within cut
+diamonds %>%
+  count(color, cut) %>%
+  group_by(cut) %>%
+  mutate(prop = n / sum(n)) %>%
+  ggplot(mapping = aes(x = color, y = cut)) +
+  geom_tile(mapping = aes(fill = prop))
+
+```
+  
+2- Use geom_tile() together with dplyr to explore how average flight delays vary by destination and month of year. What makes the plot difficult to read? How could you improve it?
+
+```{r}
+# Before improvement
+flights %>% 
+  group_by(month, dest) %>% 
+  summarise(avg_dep_delay = mean(dep_delay, na.rm = TRUE)) %>% 
+  ggplot(aes(x = factor(month), y = dest, fill = avg_dep_delay)) +
+  geom_tile() +
+  scale_fill_distiller(type = "div", palette = "Spectral")
+
+
+# After improvement
+flights %>%
+  group_by(month, dest) %>%                                 # This gives us (month, dest) pairs
+  summarise(dep_delay = mean(dep_delay, na.rm = TRUE)) %>%
+  group_by(dest) %>%                                        # group all (month, dest) pairs by dest ..
+  filter(n() == 12) %>%                                     # and only select those that have one entry per month 
+  ungroup() %>%
+  mutate(dest = reorder(dest, dep_delay)) %>%
+  ggplot(aes(x = factor(month), y = dest, fill = dep_delay)) +
+  geom_tile() +
+  labs(x = "Month", y = "Destination", fill = "Departure Delay")
+#> `summarise()` regrouping output by 'month' (override with `.groups` argument)
+```
+we could improve it by sorting destinations by a meaningful quantity (distance, number of flights, average delay), and removing missing values.
+
+
+3- Why is it slightly better to use aes(x = color, y = cut) rather than aes(x = cut, y = color) in the example above?
+
+```{r}
+diamonds %>% 
+  count(color, cut) %>%  
+  ggplot(mapping = aes(x = color, y = cut)) +
+    geom_tile(mapping = aes(fill = n))
+
+diamonds %>% 
+  count(color, cut) %>%  
+  ggplot(mapping = aes(x = cut, y = color)) +
+    geom_tile(mapping = aes(fill = n))
+
+```
+It’s usually better to use the categorical variable with a larger number of categories or the longer labels on the y axis. If at all possible, labels should be horizontal because that is easier to read.
+
+
+## 7.5.3.1 Exercises
+  
+1- Instead of summarising the conditional distribution with a boxplot, you could use a frequency polygon. What do you need to consider when using cut_width() vs cut_number()? How does that impact a visualisation of the 2d distribution of carat and price?
+
+```{r}
+diamonds %>% 
+  filter(carat < 2.5) %>% 
+ggplot(aes(x = price)) + 
+  geom_freqpoly(aes(color = cut_width(carat, 0.25)))
+
+ggplot(
+  data = diamonds,
+  mapping = aes(color = cut_width(carat, 1, boundary = 0), x = price)
+) +
+  geom_freqpoly() +
+  labs(x = "Price", y = "Count", color = "Carat")
+```
+
+Both cut_width() and cut_number() split a variable into groups. When using cut_width(), we need to choose the width, and the number of bins will be calculated automatically. When using cut_number(), we need to specify the number of bins, and the widths will be calculated automatically.
+
+The distribution is right skewed so using cut_width() results in much fewer diamonds in the right most bins. cut_number() ends up putting a much larger range of diamonds in the higher bins and makes the distribution appear much flatter.
+
+2- Visualise the distribution of carat, partitioned by price.
+
+```{r}
+ggplot(diamonds, aes(x = cut_number(price, 10), y = carat)) +
+  geom_boxplot() +
+  coord_flip() +
+  xlab("Price")
+
+ggplot(diamonds, aes(x = cut_width(price, 2000, boundary = 0), y = carat)) +
+  geom_boxplot(varwidth = TRUE) +
+  coord_flip() +
+  xlab("Price")
+
+```
+
+3- How does the price distribution of very large diamonds compare to small diamonds? Is it as you expect, or does it surprise you?
+
+The distribution for larger diamonds is more spread out, which (being a married man and having done my diamond research before) is not surprising since the other factors like color, cut, and clarity become more important to pricing than they are for smaller diamonds.
+
+
+4- Combine two of the techniques you’ve learned to visualise the combined distribution of cut, carat, and price.
+
+```{r}
+diamonds %>% 
+        group_by(cut, cut_number(carat, 5)) %>% 
+        summarise(avg_price = mean(price, na.rm = TRUE)) %>% 
+        ggplot() +
+        geom_tile(aes(x = `cut_number(carat, 5)`, y = cut, fill = avg_price))
+
+ggplot(diamonds, aes(x = cut_number(carat, 5), y = price, colour = cut)) +
+  geom_boxplot()
+
+ggplot(diamonds, aes(colour = cut_number(carat, 5), y = price, x = cut)) +
+  geom_boxplot()
+
+```
+
+
+5- Two dimensional plots reveal outliers that are not visible in one dimensional plots. For example, some points in the plot below have an unusual combination of x and y values, which makes the points outliers even though their x and y values appear normal when examined separately.
+
+```{r}
+ggplot(data = diamonds) +
+  geom_point(mapping = aes(x = x, y = y)) +
+  coord_cartesian(xlim = c(4, 11), ylim = c(4, 11))
+```
+Why is a scatterplot a better display than a binned plot for this case?
+
+```{r}
+ggplot(data = diamonds) +
+  geom_bin2d(mapping = aes(x = x, y = y), bins = 100) +
+  coord_cartesian(xlim = c(4, 11), ylim = c(4, 11))
+```
+there is a strong relationship between x and y. The outliers in this plot are not extreme in either x or y. A binned plot would not reveal these outliers, and may lead us to conclude that the largest value of x was an outlier even though it appears to fit the bivariate pattern well.
+
