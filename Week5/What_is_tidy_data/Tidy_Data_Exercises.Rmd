@@ -1,5 +1,5 @@
 ---
-title: "data_visualisation_exercises"
+title: "Tidy Data Exercises"
 author: "Yasmeen Aldossary"
 date: "4/26/2021"
 output: html_document
