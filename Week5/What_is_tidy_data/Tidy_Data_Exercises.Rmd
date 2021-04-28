@@ -1,0 +1,363 @@
+---
+title: "data_visualisation_exercises"
+author: "Yasmeen Aldossary"
+date: "4/26/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+```{r}
+library(tidyverse)
+```
+
+## 12.2.1 Exercises
+
+1- Using prose, describe how the variables and observations are organised in each of the sample tables.
+
+table1 contains 6 rows and 4 columns, this table show that each variable have its own column.and each observation have its own row. and each value have its own cell. because each row represents a country, year combination.
+The columns cases and population contain the values for those variables.
+
+```{r}
+table1
+```
+
+`table2` contains 12 rows and 4 columns, each row represents the `country`, `year`, and the variable type of either `case` or `population`. The variable `count` represents the unique value for the variable type.
+
+```{r}
+table2
+```
+
+`table3` contains 6 rows and 3 columns, each row represents a `country`, `year` combination the variables `case` and `count` are mutated into a new variable `rate`.
+
+```{r}
+table3
+```
+`table4` splits the data into two different tables, `table4a` and `table4b`.  one for `cases`, and the other for `population`,In these tables the years are split into two different variables. There is an observation for each country in these tables.
+
+```{r}
+table4a
+```
+```{r}
+table4b
+```
+
+2- Compute the rate for table2, and table4a + table4b. You will need to perform four operations:
+1.Extract the number of TB cases per country per year.
+2.Extract the matching population per country per year.
+3.Divide cases by population, and multiply by 10000.
+4.Store back in the appropriate place.
+Which representation is easiest to work with? Which is hardest? Why?
+
+```{r}
+cases_filter <- filter(table2, type == 'cases')
+ppl_filter   <- filter(table2, type == 'population')
+cases        <- cases_filter$count
+populations  <- ppl_filter$count
+
+table2_rate  <- tibble(countries = cases_filter$country,
+                      years = cases_filter$year,
+                      rate = (cases/populations) * 10000)
+
+table2_rate
+```
+```{r}
+countries <- table4a$country
+cases_1999 <- table4a$`1999`
+cases_2000 <- table4a$`2000`
+populations_1999 <- table4b$`1999`
+populations_2000 <- table4b$`2000`
+
+table_1999_rate <- tibble(country = countries,
+                          year = 1999,
+                          rate = cases_1999 / populations_1999 * 10000)
+
+table_2000_rate <- tibble(country = countries,
+                          year = 2000,
+                          rate = cases_2000 / populations_2000 * 10000)
+
+table4_rate <- rbind(table_1999_rate, table_2000_rate) %>% arrange(country)
+
+table4_rate
+
+```
+ALL three tables are not easy to work with. but `Table2` is less difficult to work with,and involves less intermediate steps.
+
+The ideal format of a data frame to answer this question is one with columns country, year, cases, and population. Then problem could be answered with a single mutate() call.
+
+
+3- Recreate the plot showing change in cases over time using table2 instead of table1. What do you need to do first?
+
+We need to first filter `table2` to include only the rows for cases.
+```{r}
+ggplot(data = filter(table2, type == 'cases'),
+       mapping = aes(x = year, y= count)) +
+  geom_line(mapping = aes(group = country),
+            color = 'grey50') +
+  geom_point(mapping = aes(color = country)) + 
+  labs(y = 'cases') +
+  scale_x_continuous(breaks = (c(1999,2000)))
+```
+
+
+## 12.3.3 Exercises
+
+1- Why are `pivot_longer()` and `pivot_wider()` not perfectly symmetrical?
+
+```{r}  
+  stocks <- tibble(
+    year   = c(2015, 2015, 2016, 2016),
+    half  = c(   1,    2,     1,    2),
+    return = c(1.88, 0.59, 0.92, 0.17)
+  )
+stocks %>% 
+  pivot_wider(names_from = year, values_from = return) %>% 
+  pivot_longer(`2015`:`2016`, names_to = "year", values_to = "return")
+```
+The `pivot_wider()` expression pivots the table to create a data frame with years as column names, and the values in return as the column values.
+
+The `pivot_longer()` expression unpivots the table, returning it to a tidy data frame with columns for half, year, and return.
+
+The functions `pivot_longer()` and `pivot_wider()` are not perfectly symmetrical because column type information is lost when a data frame is converted from wide to long. The function `pivot_longer()` stacks multiple columns which may have had multiple data types into a single column with a single data type. This transformation throws away the individual data types of the original columns. The function `pivot_wider()` creates column names from values in column. These column names will always be treated as character values by `pivot_longer()` so if the original variable used to create the column names did not have a character data type, then the round-trip will not reproduce the same dataset.
+
+
+
+  
+2- Why does this code fail?
+
+```{r}  
+  table4a %>% 
+  pivot_longer(c(1999, 2000), names_to = "year", values_to = "cases")
+#> Error: Can't subset columns that don't exist.
+#> ✖ Locations 1999 and 2000 don't exist.
+#> ℹ There are only 3 columns.
+```
+
+We have noticed that the backticks around 1999 and 2000  are missing,since the variable names are numeric and hence non-syntatic. When selecting variables from a data frame, tidyverse functions will interpret numbers, like 1999 and 2000, as column numbers.
+
+```{r}
+table4a %>% 
+  pivot_longer(c(`1999`, `2000`), names_to = "year", values_to = "cases")
+```
+
+3- What would happen if you widen this table? Why? How could you add a new column to uniquely identify each value?
+  
+```{r}
+people <- tribble(
+    ~name,             ~names,  ~values,
+    #-----------------|--------|------
+    "Phillip Woods",   "age",       45,
+    "Phillip Woods",   "height",   186,
+    "Phillip Woods",   "age",       50,
+    "Jessica Cordero", "age",       37,
+    "Jessica Cordero", "height",   156
+  )
+people
+```
+
+```{r}
+pivot_wider(people, names_from="name", values_from = "values")
+```
+
+What happend? we can see that there are two rows with values for the age of “Phillip Woods”. so we uesed `pivot_wider()` to produces columns that are lists of numeric vectors because the name and names columns do not uniquely identify rows.
+
+We could add a new column to uniquely identify each value by adding a row with a distinct observation count for each combination of name and names.
+
+```{r}
+people2 <- people %>%
+  group_by(name, names) %>%
+  mutate(id = row_number())
+people2
+```
+
+Now we can use `pivot_wider` :
+```{r}
+pivot_wider(people2, names_from="names", values_from = "values")
+```
+
+
+4- Tidy the simple tibble below. Do you need to make it wider or longer? What are the variables?
+
+```{r}  
+  preg <- tribble(
+    ~pregnant, ~male, ~female,
+    "yes",     NA,    10,
+    "no",      20,    12
+  )
+```
+
+To tidy the preg table use `pivot_longer`.This simple tibble appears to represent three observations: pregnant female of some value 10, non-pregnant male of some value 20, non-pregnant female of some value 12.
+
+The observations in this data are unique combinations of sex and pregnancy status.
+
+Remove the (male, pregnant) row with a missing value to simplify the tidied data frame.
+
+```{r}
+preg_tidy <- preg %>%
+  pivot_longer(c(male, female), names_to = "sex", values_to = "count", values_drop_na = TRUE)
+preg_tidy
+```
+
+## 12.4.3 Exercises
+
+1- What do the extra and fill arguments do in separate()? Experiment with the various options for the following two toy datasets.
+
+```{r}
+tibble(x = c("a,b,c", "d,e,f,g", "h,i,j")) %>% 
+  separate(x, c("one", "two", "three"))
+
+tibble(x = c("a,b,c", "d,e", "f,g,i")) %>% 
+  separate(x, c("one", "two", "three"))
+```
+The `extra` argumen controls what happens when the separated pieces are more than the number of variables defined `into`. And`fill` is similar to `extra`, except it controls what happens if the separated pieces are less than the number of variables defined in `into`. By default, `separate()` drops extra values with a warning.
+
+```{r}
+tibble(x = c("a,b,c", "d,e,f,g", "h,i,j")) %>% 
+  separate(x, c("one", "two", "three"), extra = 'drop')
+
+tibble(x = c("a,b,c", "d,e,f,g", "h,i,j")) %>% 
+  separate(x, c("one", "two", "three"), extra = 'merge')
+
+tibble(x = c("a,b,c", "d,e", "f,g,i")) %>% 
+  separate(x, c("one", "two", "three"), fill = 'right')
+
+tibble(x = c("a,b,c", "d,e", "f,g,i")) %>% 
+  separate(x, c("one", "two", "three"), fill = 'left')
+
+
+
+```
+
+We have noticed the following:
+- In the first table `extra = 'drop'` deleted the extra item.
+- In the second table `extra = 'merge'`merged the extra item with the last item.
+- In third table `fill = 'right'` fills with NAs on the right.
+- In fourth table `fill = 'left'` fills with NAs on the left.
+
+
+2-Both unite() and separate() have a remove argument. What does it do? Why would you set it to FALSE?
+
+The `remove` argument is set to `TRUE` by default. It removes input columns from output data frame. If set to `FALSE`, the original separate column, or the united columns, are retained in the output.
+
+
+3- Compare and contrast separate() and extract(). Why are there three variations of separation (by position, by separator, and with groups), but only one unite?
+
+`extract()` uses regular expression to capture groups and turn groups into multiple columns.
+
+There are many ways to separate a column into multiple columns. In contrast, there is only one way to put together multiple columns into a single column.
+
+  
+## 12.5.1 Exercises
+
+1- Compare and contrast the `fill` arguments to `pivot_wider()` and `complete()`.
+
+the `values_fill` argument of `pivot_wider()` accepts a single value.
+
+In `complete()`, NAs under different variables can be replaced by different values. The `fill` argument takes in a list that specifies the values to replace NA for different variables.
+
+The `values_fill` argument in `pivot_wider()` and the `fill` argument to `complete()` both set vales to replace NA. Both arguments accept named lists to set values for each column. Also, both cases replace both implicit and explicit missing values.
+
+
+2- What does the direction argument to fill() do?
+
+The default value is down. Any NA's will be replaced by the previous non-missing value. The filling direction can be reversed if .direction is set to up.
+
+
+## 12.6.1 Exercises
+
+1- In this case study I set values_drop_na = TRUE just to make it easier to check that we had the correct values. Is this reasonable? Think about how missing values are represented in this dataset. Are there implicit missing values? What’s the difference between an NA and zero?
+
+The reasonableness of using values_drop_na = TRUE depends on how missing values are represented in this dataset. The main concern is whether a missing value means that there were no cases of TB or whether it means that the WHO does not have data on the number of TB cases.
+
+If there are no 0 values in the data, then missing values may be used to indicate no cases.
+
+If there are both explicit and implicit missing values, then it suggests that missing values are being used differently. In that case, it is likely that explicit missing values would mean no cases, and implicit missing values would mean no data on the number of cases.
+
+First, check for the presence of zeros in the data.
+
+```{r}
+who1 %>%
+  filter(cases == 0) %>%
+  nrow()
+```
+
+There are zeros in the data, so it appears that cases of zero TB are explicitly indicated, and the value of NA is used to indicate missing data.
+
+Second, I should check whether all values for a (country, year) are missing or whether it is possible for only some columns to be missing.
+
+```{r}
+pivot_longer(who, new_sp_m014:newrel_f65, names_to = "key", values_to = "cases") %>%
+  group_by(country, year) %>%
+  mutate(prop_missing = sum(is.na(cases)) / n()) %>%
+  filter(prop_missing > 0, prop_missing < 1)
+```
+
+There're some row in `country`, `year`missing values in its columns.
+
+check for implicit missing values. Implicit missing values are (year, country) combinations that do not appear in the data.
+
+```{r}
+nrow(who)
+
+who %>% 
+  complete(country, year) %>%
+  nrow()
+
+```
+
+The number of complete cases of `country`, `year` is greater than the number of rows in who, there are some implicit values. But that doesn’t tell us what those implicit missing values are.
+
+```{r}
+anti_join(complete(who, country, year), who, by = c("country", "year")) %>%
+  select(country, year) %>%
+  group_by(country) %>%
+  # so I can make better sense of the years
+  summarise(min_year = min(year), max_year = max(year))
+```
+All of these refer to `country`, `year` combinations for years prior to the existence of the country.0 is used to represent no cases of TB. Explicit missing values NAs are used to represent missing data for `country`, `year` combinations in which the country existed in that year. Implicit missing values are used to represent missing data because a country did not exist in that year.
+
+Depending on the importance of NAs and their interpretations, setting `values_drop_na = TRUE` can be reasonable.
+
+
+2-What happens if you neglect the `mutate()` step? `(mutate(names_from = stringr::str_replace(key, "newrel", "new_rel")))`
+
+The `separate()` function emits the warning “too few values”. If we check the rows for keys beginning with "newrel_", we see that sexage is missing, and type = m014.
+
+
+3- I claimed that `iso2` and `iso3` were redundant with country. Confirm this claim.
+
+```{r}
+who %>% select(1:3) %>% sapply(function(x){length(unique(x))})
+
+who %>% select(1:3) %>%
+  unite(combined, 1:3) %>%
+  select(combined) %>%
+  distinct() %>%
+  nrow()
+```
+We have checked the number of unique values in country, iso2, and iso3. And the number of unique combinations of these columns
+
+The results were 2019 which means that for each country, there is only one iso2 code, and also one iso3 code. iso2 and iso3 are redundant columns.
+
+
+4- For each country, year, and sex compute the total number of cases of TB. Make an informative visualisation of the data.
+
+```{r}
+who %>%
+  gather(code, value, new_sp_m014:newrel_f65, na.rm = TRUE) %>% 
+  mutate(code = stringr::str_replace(code, "newrel", "new_rel")) %>%
+  separate(code, c("new", "var", "sexage")) %>% 
+  select(-new, -iso2, -iso3) %>% 
+  separate(sexage, c("sex", "age"), sep = 1) %>%
+  group_by(country, year, sex) %>%
+  summarize(total_case = sum(value)) %>%
+  unite(country_sex, country, sex, remove = FALSE) %>%
+  ggplot() +
+  geom_line(mapping = aes(x = year, y = total_case, color = sex,
+                          group = country_sex))
+```
+
+The number of countries is high so its difficult to read a small multiples plot faceting by country.  we should focus on those countries with the largest changes or absolute magnitudes is better option.
