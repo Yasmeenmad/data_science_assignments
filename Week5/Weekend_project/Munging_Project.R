@@ -39,28 +39,6 @@ clean_candy <- clean_candy[!is.na(clean_candy[,3]) | !is.na(clean_candy[,120]),]
 clean_candy$x <- NULL
 
 
-# ===================================================== Age column pre-processing ===========================================================
-
-clean_candy %>% select(age) %>% nrow() # to find number of rows in age column >> 2439 rows (before cleaning)
-clean_candy %>% select(age) %>% filter(is.na(age)) %>% nrow() # to find number NA (blank) values in age column >> 63 rows
-sapply(clean_candy$age, class) # to check type of age column >> character
-
-# replace specific values such as 'sixty-nine' to 69
-clean_candy$age = recode(clean_candy$age, "312"= "31", "45-55" = "50",
-                         "39.4"="39","24-50"="37", "Over 50"="51",
-                         "sixty-nine" ="69", "46 Halloweens." ="46",
-                         "70.5"="70", "59 on the day after Halloween"= "59",
-                         "60+"="61", "?"="1000","5u"="1000", "no"="1000", "1"="1000")
-
-# replace all long strings with NA value
-clean_candy$age[nchar(clean_candy$age) > 2] <- NA 
-
-# change the type of age column from character to numeric
-clean_candy$age = lapply(clean_candy$age, function(x) if(is.character(x)) as.numeric(x) else x) 
-sapply(clean_candy$age, class) # to check type of age column >> numeric
-
-
-
 # ===================================================== Country column pre-processing =======================================================
 
 # print countries' names
@@ -116,6 +94,111 @@ clean_candy$country[clean_candy$country %in% ireland]          <- 'Ireland'
 
 # check
 setNames(as.data.frame(table(clean_candy$country)), c("country", "n"))
+
+
+
+# =========================================== First Insight: KITKAT & CANDY CORN IN TRICK OR TREATING =======================================
+
+# filter the dataframe to Countries that responded most to the survey : United States, United Kingdom and Canada
+# and show the appropriate age for trick or treating: from 1 to 15, then only show the male and female gender
+filter_data    <- filter(clean_candy, (country == "United States" | country == "United Kingdom" |
+                                         country == "Canada") & (age >= 1 & age <= 15) &
+                           (gender == "Male"| gender == "Female"))
+
+# create a function with two inputs: dataframe, column name
+# the function remove the na values for a specific column
+remove_na    <- function(dataframe, desiredColumn) {
+  clean_na  <- complete.cases(dataframe[, desiredColumn])
+  return(dataframe[clean_na, ])
+}
+
+# remove NA's values for the kitkat, candy_corn columns
+candy_kitkat   <- remove_na(filter_data, 'kit kat')
+candy_corn     <- remove_na(filter_data, 'candy corn')
+
+# ploting a chart for The child feeling of receiving a KitKat in three different countries by gender
+ggplot(candy_kitkat) +
+  geom_bar(aes(x = gender, fill = `kit kat`)) +
+  labs(title = "The Child Feeling Of Receiving A KitKat In Three Different Countries By Gender",
+       x = "Countries & Gender") +
+  guides(fill=guide_legend(title="Feelings")) +
+  facet_wrap(~ country) 
+
+
+## First of all, we can see from the plot that there are no female children in the United Kingdom nor males in Canada
+## who have filled out the survey
+## And the plot shows that the KitKat candy is popular candy bar between children for trick or treating in these countries
+## Also, in the united states the number of females who feel joy when they are receiving the kitkat candy bar is higher 
+## than males
+
+
+# ploting a chart for The child feeling of receiving a Candy Corn in three different countries by gender
+ggplot(candy_corn) +
+  geom_bar(aes(x = gender, fill = `candy corn`)) +
+  labs(title = "The Child Feeling Of Receiving A Candy Corn In Three Different Countries By Gender",
+       x = "Countries & Gender") +
+  guides(fill=guide_legend(title="Feelings")) +
+  facet_wrap(~ country) 
+
+
+## First of all, we can see from the plot that there are no female children in the United Kingdom nor males in Canada 
+## who have filled out the survey
+## And the plot shows that the candy corn is popular candy bar for the females in united states and Not popular for 
+## the males 
+## And for the unites kingdom the males don't care about the candy corn
+
+
+# ===================================================== Age column pre-processing ===========================================================
+
+clean_candy %>% select(age) %>% nrow() # to find number of rows in age column >> 2439 rows (before cleaning)
+clean_candy %>% select(age) %>% filter(is.na(age)) %>% nrow() # to find number NA (blank) values in age column >> 63 rows
+sapply(clean_candy$age, class) # to check type of age column >> character
+
+# replace specific values such as 'sixty-nine' to 69
+clean_candy$age = recode(clean_candy$age, "312"= "31", "45-55" = "50",
+                         "39.4"="39","24-50"="37", "Over 50"="51",
+                         "sixty-nine" ="69", "46 Halloweens." ="46",
+                         "70.5"="70", "59 on the day after Halloween"= "59",
+                         "60+"="61", "?"="1000","5u"="1000", "no"="1000", "1"="1000")
+
+# replace all long strings with NA value
+clean_candy$age[nchar(clean_candy$age) > 2] <- NA 
+
+# change the type of age column from character to numeric
+clean_candy$age = lapply(clean_candy$age, function(x) if(is.character(x)) as.numeric(x) else x) 
+sapply(clean_candy$age, class) # to check type of age column >> numeric
+
+
+# =============================================== Second Insight: MOST DAY PREFERABLE =======================================================
+
+# create a new column to determine the age stages
+age_data <- clean_candy %>% mutate(agegroup = case_when(age >= 5  & age <= 12 ~ 'Child',
+                                                        age >= 13  & age <= 19 ~ 'Teen',
+                                                        age >= 20  & age <= 39 ~ 'Adult',
+                                                        age >= 40  & age <= 59 ~ 'Middle Age Adult',
+                                                        age >= 60 ~ 'Senior Adult'))
+
+# filter the age_data to only show the male and female gender
+filter_age_data    <- filter(age_data, (gender == "Male"| gender == "Female"))
+
+# remove NA's values form the day, agegroup columns
+age_data_na_day   <- remove_na(filter_age_data , 'day')
+age_data_na       <- remove_na(age_data_na_day , 'agegroup')
+
+# ploting a chart for The Most Preferable Day For Each Age Stage By Gender
+ggplot(age_data_na, aes(x = agegroup, fill = day)) +
+  geom_bar(na.rm = TRUE, position = position_dodge()) + 
+  labs(title = "The Most Preferable Day For Each Age Stage By Gender", x = "Age Stages & Gender") +
+  guides(fill=guide_legend(title="Day")) +
+  theme_minimal()+
+  facet_wrap(~ gender)  
+
+
+## As we can see from the plot that both genders in all age groups prefer Friday except for the female in  
+## Senior Adult group, and also in child group for males they seems to prefer sunday
+
+
+
 
 # ====================================================== State column pre-processing ========================================================
 
@@ -328,85 +411,6 @@ clean_candy$state[clean_candy$state %in% Södermanland]    <- 'SÃ¶dermanland and 
 
 # check
 setNames(as.data.frame(table(clean_candy$state)), c("state", "n"))
-
-
-# =========================================== First Insight: KITKAT & CANDY CORN IN TRICK OR TREATING =======================================
-
-# filter the dataframe to Countries that responded most to the survey : United States, United Kingdom and Canada
-# and show the appropriate age for trick or treating: from 1 to 15, then only show the male and female gender
-filter_data    <- filter(clean_candy, (country == "United States" | country == "United Kingdom" |
-                                         country == "Canada") & (age >= 1 & age <= 15) &
-                           (gender == "Male"| gender == "Female"))
-
-# create a function with two inputs: dataframe, column name
-# the function remove the na values for a specific column
-remove_na    <- function(dataframe, desiredColumn) {
-  clean_na  <- complete.cases(dataframe[, desiredColumn])
-  return(dataframe[clean_na, ])
-}
-
-# remove NA's values for the kitkat, candy_corn columns
-candy_kitkat   <- remove_na(filter_data, 'kit kat')
-candy_corn     <- remove_na(filter_data, 'candy corn')
-
-# ploting a chart for The child feeling of receiving a KitKat in three different countries by gender
-ggplot(candy_kitkat) +
-  geom_bar(aes(x = gender, fill = `kit kat`)) +
-  labs(title = "The Child Feeling Of Receiving A KitKat In Three Different Countries By Gender",
-       x = "Countries & Gender") +
-  guides(fill=guide_legend(title="Feelings")) +
-  facet_wrap(~ country) 
-
-
-## First of all, we can see from the plot that there are no female children in the United Kingdom nor males in Canada
-## who have filled out the survey
-## And the plot shows that the KitKat candy is popular candy bar between children for trick or treating in these countries
-## Also, in the united states the number of females who feel joy when they are receiving the kitkat candy bar is higher 
-## than males
-
-
-# ploting a chart for The child feeling of receiving a Candy Corn in three different countries by gender
-ggplot(candy_corn) +
-  geom_bar(aes(x = gender, fill = `candy corn`)) +
-  labs(title = "The Child Feeling Of Receiving A Candy Corn In Three Different Countries By Gender",
-       x = "Countries & Gender") +
-  guides(fill=guide_legend(title="Feelings")) +
-  facet_wrap(~ country) 
-
-
-## First of all, we can see from the plot that there are no female children in the United Kingdom nor males in Canada 
-## who have filled out the survey
-## And the plot shows that the candy corn is popular candy bar for the females in united states and Not popular for 
-## the males 
-## And for the unites kingdom the males don't care about the candy corn
-
-# =============================================== Second Insight: MOST DAY PREFERABLE =======================================================
-
-# create a new column to determine the age stages
-age_data <- clean_candy %>% mutate(agegroup = case_when(age >= 5  & age <= 12 ~ 'Child',
-                                                        age >= 13  & age <= 19 ~ 'Teen',
-                                                        age >= 20  & age <= 39 ~ 'Adult',
-                                                        age >= 40  & age <= 59 ~ 'Middle Age Adult',
-                                                        age >= 60 ~ 'Senior Adult'))
-
-# filter the age_data to only show the male and female gender
-filter_age_data    <- filter(age_data, (gender == "Male"| gender == "Female"))
-
-# remove NA's values form the day, agegroup columns
-age_data_na_day   <- remove_na(filter_age_data , 'day')
-age_data_na       <- remove_na(age_data_na_day , 'agegroup')
-
-# ploting a chart for The Most Preferable Day For Each Age Stage By Gender
-ggplot(age_data_na, aes(x = agegroup, fill = day)) +
-  geom_bar(na.rm = TRUE, position = position_dodge()) + 
-  labs(title = "The Most Preferable Day For Each Age Stage By Gender", x = "Age Stages & Gender") +
-  guides(fill=guide_legend(title="Day")) +
-  theme_minimal()+
-  facet_wrap(~ gender)  
-
-
-## As we can see from the plot that both genders in all age groups prefer Friday except for the female in  
-## Senior Adult group, and also in child group for males they seems to prefer sunday
 
 
 # ========================================== Third Insight: Feelings when Receive Butterfinger ===============================================
