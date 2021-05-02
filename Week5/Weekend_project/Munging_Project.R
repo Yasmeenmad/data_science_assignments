@@ -405,7 +405,9 @@ ggplot(age_data_na, aes(x = agegroup, fill = day)) +
   facet_wrap(~ gender)  
 
 
-## As we can see from the plot that both genders in all age groups prefer Friday
+## As we can see from the plot that both genders in all age groups prefer Friday except for the female in  
+## Senior Adult group, and also in child group for males they seems to prefer sunday
+
 
 # ========================================== Third Insight: Feelings when Receive Butterfinger ===============================================
 
