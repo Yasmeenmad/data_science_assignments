@@ -357,6 +357,14 @@ ggplot(candy_kitkat) +
   guides(fill=guide_legend(title="Feelings")) +
   facet_wrap(~ country) 
 
+
+## First of all, we can see from the plot that there are no female children in the United Kingdom nor males in Canada
+## who have filled out the survey
+## And the plot shows that the KitKat candy is popular candy bar between children for trick or treating in these countries
+## Also, in the united states the number of females who feel joy when they are receiving the kitkat candy bar is higher 
+## than males
+
+
 # ploting a chart for The child feeling of receiving a Candy Corn in three different countries by gender
 ggplot(candy_corn) +
   geom_bar(aes(x = gender, fill = `candy corn`)) +
@@ -365,6 +373,12 @@ ggplot(candy_corn) +
   guides(fill=guide_legend(title="Feelings")) +
   facet_wrap(~ country) 
 
+
+## First of all, we can see from the plot that there are no female children in the United Kingdom nor males in Canada 
+## who have filled out the survey
+## And the plot shows that the candy corn is popular candy bar for the females in united states and Not popular for 
+## the males 
+## And for the unites kingdom the males don't care about the candy corn
 
 # =============================================== Second Insight: MOST DAY PREFERABLE =======================================================
 
@@ -378,17 +392,20 @@ age_data <- clean_candy %>% mutate(agegroup = case_when(age >= 5  & age <= 12 ~ 
 # filter the age_data to only show the male and female gender
 filter_age_data    <- filter(age_data, (gender == "Male"| gender == "Female"))
 
-# remove NA's values form the day column
-age_data_na   <- remove_na(filter_age_data , 'day')
+# remove NA's values form the day, agegroup columns
+age_data_na_day   <- remove_na(filter_age_data , 'day')
+age_data_na       <- remove_na(age_data_na_day , 'agegroup')
 
 # ploting a chart for The Most Preferable Day For Each Age Stage By Gender
 ggplot(age_data_na, aes(x = agegroup, fill = day)) +
   geom_bar(na.rm = TRUE, position = position_dodge()) + 
-  labs(title = "The Most Preferable Day For Each Age Stage By Gender", x = "Age Stages") +
+  labs(title = "The Most Preferable Day For Each Age Stage By Gender", x = "Age Stages & Gender") +
   guides(fill=guide_legend(title="Day")) +
   theme_minimal()+
-  facet_wrap(~ gender) 
+  facet_wrap(~ gender)  
 
+
+## As we can see from the plot that both genders in all age groups prefer Friday
 
 # ========================================== Third Insight: Feelings when Receive Butterfinger ===============================================
 
