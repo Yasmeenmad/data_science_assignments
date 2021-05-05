@@ -1,0 +1,130 @@
+---
+title: "LP Brewery Report"
+author: "Yasmeen Aldossary"
+date: "5/5/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+    
+## The First Report
+
+**LP Brewery** is soda manufacturer, and we'll write a *report* for their soda inventory production.
+
+### Information about LP Brewery products 
+A batch of Strawberry Soda requires 5 grams of CO2, 4 ounces of Water, and 35 pounds of Flavor
+A batch of Orange Soda consumes 15 grams of CO2,  4 ounces of Water, and 20 pounds of Flavor
+
+#### What is the report about:
+The company asked us a question which we will answer through our report.
+**The question is: How many batches of Strawberry and Orange Soda should you make to get the maximum profit possible?**
+
+#### How we built our report
+
+1. Variable Definition
+$x1$ = Number of batches of Strawberry Soda
+$x2$ = Number of batches of Orange Soda
+
+2. Objective Function:
+ Max($13 x1 + 23 x2$)
+
+3. Production Constraints:
+Constraints matrix ---> A coefficient matrix, RHS matrix
+$5 x1 + 15 x2 <= 480$ 	(CO2)
+$4 x1 + 4 x2 <= 160$ 	(Water)
+$35 x1 +20 x2 <= 1190$ 	(Flavor)
+
+A = $[5,15 ; 4,4; 35,20; 0,0]$
+B = $[480;160;1190]$
+
+lp(direction='max', objective.in, const.mat, const.dir, const.rhs)
+
+4. Write our code and run it to get the answer
+
+```{r echo=FALSE, warning=FALSE}
+install.packages("lpSolve")
+library(lpSolve)
+```
+
+```{r, warning=FALSE}
+objective.in = c (13, 23)
+const.mat = matrix( c(5,15,4,4,35,20), nrow = 3, byrow = TRUE)
+const.dir = c("<=", "<=", "<=")
+const.rhs = c(480, 160, 1190)
+```
+
+```{r , warning=FALSE}
+prob_1 = lp(direction='max', objective.in, const.mat, const.dir, const.rhs)
+
+ans = prob_1$solution
+ans
+```
+
+
+```{r, warning=FALSE}
+val = prob_1$objval
+val
+```
+
+**So you should have to produce 12 batches of Strawberry Soda and 28 batches of Orange Soda to reach the maximum profit which is $800**
+
+
+    
+## The Second Report
+
+**LP Brewery** Company was happy with the results that we presented to them, and they provided us with a question that they wanted us to answer.
+So **LP Brewery** is coming up with a hot new brew called **Grape Soda**. Because it is a special craft beer, it has a margin of $30, It uses 10 ounces of water, 4g of CO2, and 15 pounds of flavoring. With the addition of this new soda, LP Brewery has to now think about allocating its personnel to the different manufacturing processes. 
+Each of the batches takes 5 (Strawberry Soda), 10 (Orange Soda), and 20 (Grape Soda) hours of labor to make and we have only 5 employees
+full-time. If this is the production planning for a month of brewing.
+
+
+#### What is the report about:
+The company asked us a question which we will answer through our report.
+**The question is: what is the optimal amount of each beer that must be produced to maximize profit ?**
+
+
+#### How we built our report
+
+1. Variable Definition
+$x1$ = Number of batches of Strawberry Soda
+$x2$ = Number of batches of Orange Soda
+$x3$ = Number of batches of Grape Soda
+
+2. Objective Function:
+ Max($13 X1 + 23 X2 + 30 X3$)
+
+3. Production Constraints:
+Constraints matrix ---> A coefficient matrix, RHS matrix
+$5 X1 + 15 X2 + 4 X3    <= 480$ 	CO2
+$4 X1 + 4 X2 + 10 X3    <= 160$ 	Water
+$35 X1 + 20 X2 + 15 X3  <= 1190$ 	Flavor
+$5 X` + 10 X2 + 20 X3   <= 800$   hours of labor, 5 employees, 4 weeks, 40 hour/week
+
+A = $[5,15,4 ; 4,4,10; 35,20,15; 5,10,20]$   
+B = $[480;160;1190;800]$
+
+lp(direction='max', objective.in, const.mat, const.dir, const.rhs)
+
+4. Write our code and run it to get the answer
+
+```{r, warning=FALSE}
+    objective.in = c (13, 23, 30)
+    const.mat = matrix( c(5,15,4 ,4,4,10, 35,20,15, 5,10,20), nrow = 4, byrow = TRUE)
+    const.dir = c("<=", "<=", "<=", "<=")
+    const.rhs = c(480, 160, 1190, 800)
+    
+    prob_1 = lp(direction='max', objective.in, const.mat, const.dir, const.rhs)
+    ```
+    
+    ```{r, warning=FALSE}
+    ans = prob_1$solution
+    floor(ans)
+    
+    val = prob_1$objval
+    floor(val)
+    
+```
+**So you should have to produce 0 batches of Strawberry Soda, 31 batches of Orange Soda and 3 batches of Grape Soda to reach the maximum profit which is $821**
