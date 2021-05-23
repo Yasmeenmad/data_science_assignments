@@ -35,5 +35,7 @@ for number in range(2018, 0, -4):
 lowNum  = int(input("Enter the minimum value:"))
 highNum = int(input("Enter the maximum value:"))
 mult    = int(input("Enter the number that you want to multiply by:"))
+
 for i in range(lowNum, highNum +1):
-    print(i*mult)
+    if i%mult == 0:
+        print(i)
